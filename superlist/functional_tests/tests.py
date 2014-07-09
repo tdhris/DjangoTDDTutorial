@@ -1,12 +1,24 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from django.contrib.staticfiles.testing import StaticLiveServerCase
+from unittest import skip
 
 
-class TestBasicDjango(StaticLiveServerCase):
+class FunctionalTest(StaticLiveServerCase):
 
     def setUp(self):
         self.browser = webdriver.Chrome()
+
+    def tearDown(self):
+        self.browser.quit()
+
+    def check_for_row_in_list_table(self, row_text):
+        table = self.browser.find_element_by_id('id_list_table')
+        rows = table.find_elements_by_tag_name('tr')
+        self.assertIn(row_text, [row.text for row in rows])
+
+
+class NewVisitorTest(FunctionalTest):
 
     def test_can_start_a_list_and_retrieve_it_later(self):
         self.browser.get(self.live_server_url)
@@ -34,7 +46,6 @@ class TestBasicDjango(StaticLiveServerCase):
         self.check_for_row_in_list_table('1: Buy peacock feathers')
         self.check_for_row_in_list_table(
             '2: Use peacock feathers to make a fly')
-
         self.browser.quit()
         #a new user comes along; fracis shouldn't see edith's list
         self.browser = webdriver.Chrome()
@@ -56,21 +67,8 @@ class TestBasicDjango(StaticLiveServerCase):
         self.assertNotIn('Buy peacock feathers', page_text)
         self.assertIn('Buy milk', page_text)
 
-    def check_for_row_in_list_table(self, row_text):
-        table = self.browser.find_element_by_id('id_list_table')
-        rows = table.find_elements_by_tag_name('tr')
-        self.assertIn(row_text, [row.text for row in rows])
 
-    def tearDown(self):
-        self.browser.quit()
-
-
-class NewVisitorTest(StaticLiveServerCase):
-    def setUp(self):
-        self.browser = webdriver.Chrome()
-
-    def tearDown(self):
-        self.browser.quit()
+class LayoutAndStylingTest(FunctionalTest):
 
     def test_layout_and_styling(self):
         self.browser.get(self.live_server_url)
@@ -90,3 +88,33 @@ class NewVisitorTest(StaticLiveServerCase):
             512,
             delta=5
         )
+
+
+class ItemValidationTest(FunctionalTest):
+
+    @skip
+    def test_cannot_add_empty_list_items(self):
+        self.browser.get(self.server_url)
+        self.browser.find_element_by_id('id_new_item').send_keys('\n')
+
+        # The home page refreshes, and there is an error message saying
+        # that list items cannot be blank
+        error = self.browser.find_element_by_css_selector('.has-error')
+        self.assertEqual(error.text, "You can't have an empty list item")
+
+        # She tries again with some text for the item, which now works
+        self.browser.find_element_by_id('id_new_item').send_keys('Buy milk\n')
+        self.check_for_row_in_list_table('1: Buy milk')
+
+        # Perversely, she now decides to submit a second blank list item
+        self.browser.find_element_by_id('id_new_item').send_keys('\n')
+
+        # She receives a similar warning on the list page
+        self.check_for_row_in_list_table('1: Buy milk')
+        error = self.browser.find_element_by_css_selector('.has-error')
+        self.assertEqual(error.text, "You can't have an empty list item")
+
+        # And she can correct it by filling some text in
+        self.browser.find_element_by_id('id_new_item').send_keys('Make tea\n')
+        self.check_for_row_in_list_table('1: Buy milk')
+        self.check_for_row_in_list_table('2: Make tea')
