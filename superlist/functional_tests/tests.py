@@ -1,9 +1,9 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from django.test import LiveServerTestCase
+from django.contrib.staticfiles.testing import StaticLiveServerCase
 
 
-class TestBasicDjango(LiveServerTestCase):
+class TestBasicDjango(StaticLiveServerCase):
 
     def setUp(self):
         self.browser = webdriver.Chrome()
@@ -37,7 +37,7 @@ class TestBasicDjango(LiveServerTestCase):
 
         self.browser.quit()
         #a new user comes along; fracis shouldn't see edith's list
-        self.browser = webdriver.Firefox()
+        self.browser = webdriver.Chrome()
 
         self.browser.get(self.live_server_url)
         page_text = self.browser.find_element_by_tag_name('body').text
@@ -65,7 +65,7 @@ class TestBasicDjango(LiveServerTestCase):
         self.browser.quit()
 
 
-class NewVisitorTest(LiveServerTestCase):
+class NewVisitorTest(StaticLiveServerCase):
     def setUp(self):
         self.browser = webdriver.Chrome()
 
