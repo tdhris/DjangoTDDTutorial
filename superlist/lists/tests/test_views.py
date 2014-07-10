@@ -1,7 +1,10 @@
 from django.core.urlresolvers import resolve
 from django.template.loader import render_to_string
 from lists.models import Item, List
-from lists.forms import ItemForm, EMPTY_LIST_ERROR
+from lists.forms import (
+    EMPTY_LIST_ERROR,
+    ExistingListItemForm, ItemForm
+)
 from django.test import TestCase
 from lists.views import home_page
 from django.http import HttpRequest
@@ -37,6 +40,13 @@ class TestHomePage(TestCase):
 
 class ListViewTest(TestCase):
 
+    def post_invalid_input(self):
+        list_ = List.objects.create()
+        return self.client.post(
+            '/lists/%d/' % (list_.id,),
+            data={'text': ''}
+        )
+
     def test_displays_only_items_for_that_list(self):
         correct_list = List.objects.create()
         Item.objects.create(text='itemey 1', list=correct_list)
@@ -63,6 +73,16 @@ class ListViewTest(TestCase):
         self.client.post('/lists/new', data={'text': ''})
         self.assertEqual(List.objects.count(), 0)
         self.assertEqual(Item.objects.count(), 0)
+
+    def test_displays_item_form(self):
+        list_ = List.objects.create()
+        response = self.client.get('/lists/%d/' % (list_.id,))
+        self.assertIsInstance(response.context['form'], ExistingListItemForm)
+        self.assertContains(response, 'name="text"')
+
+    def test_for_invalid_input_passes_form_to_template(self):
+        response = self.post_invalid_input()
+        self.assertIsInstance(response.context['form'], ExistingListItemForm)
 
 
 class NewListTest(TestCase):

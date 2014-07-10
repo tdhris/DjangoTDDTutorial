@@ -2,6 +2,24 @@
     margin-top: 2ex;
 }
 
-.has-error {
-    color: red;
+.text-center h1 {
+    color: rgb(47,79,79) ;
+    font-family: "Brushstroke", fantasy;
+    font-variant: small-caps;
+    font-size: 43px;
+}
+
+.container {
+/*    background-color: rgb(192, 192, 192);*/
+    font-family: "Zapf Chancery", cursive;
+    font-size: 20px;
+    text-align: center;
+    color: rgb(47,79,79);
+}
+
+.help-block {
+    color: rgb(208, 0, 0);
+    font-family: "Zapf Chancery", cursive;
+    font-size: 15px;
+    font-variant: small-caps;
 }
