@@ -2,6 +2,8 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from django.contrib.staticfiles.testing import StaticLiveServerCase
 from unittest import skip
+from django.utils.html import escape
+from lists.forms import EMPTY_LIST_ERROR
 
 
 class FunctionalTest(StaticLiveServerCase):
@@ -17,6 +19,9 @@ class FunctionalTest(StaticLiveServerCase):
         rows = table.find_elements_by_tag_name('tr')
         self.assertIn(row_text, [row.text for row in rows])
 
+    def get_item_input_box(self):
+        return self.browser.find_element_by_id('id_text')
+
 
 class NewVisitorTest(FunctionalTest):
 
@@ -27,7 +32,7 @@ class NewVisitorTest(FunctionalTest):
         header_text = self.browser.find_element_by_tag_name('h1').text
         self.assertIn('To-Do', header_text)
 
-        inputbox = self.browser.find_element_by_id('id_new_item')
+        inputbox = self.get_item_input_box()
         self.assertEqual(
             inputbox.get_attribute('placeholder'),
             'Enter a to-do item'
@@ -36,7 +41,7 @@ class NewVisitorTest(FunctionalTest):
         inputbox.send_keys('Buy peacock feathers')
         inputbox.send_keys(Keys.ENTER)
 
-        inputbox = self.browser.find_element_by_id('id_new_item')
+        inputbox = self.get_item_input_box()
         inputbox.send_keys('Use peacock feathers to make a fly')
         inputbox.send_keys(Keys.ENTER)
 
@@ -55,7 +60,7 @@ class NewVisitorTest(FunctionalTest):
         self.assertNotIn('Buy peacock feathers', page_text)
         self.assertNotIn('make a fly', page_text)
 
-        inputbox = self.browser.find_element_by_id('id_new_item')
+        inputbox = self.get_item_input_box()
         inputbox.send_keys('Buy milk')
         inputbox.send_keys(Keys.ENTER)
 
@@ -74,7 +79,7 @@ class LayoutAndStylingTest(FunctionalTest):
         self.browser.get(self.live_server_url)
         self.browser.set_window_size(1024, 768)
 
-        inputbox = self.browser.find_element_by_id('id_new_item')
+        inputbox = self.get_item_input_box()
         self.assertAlmostEqual(
             inputbox.location['x'] + inputbox.size['width'] / 2,
             512,
@@ -82,7 +87,7 @@ class LayoutAndStylingTest(FunctionalTest):
         )
 
         inputbox.send_keys('testing\n')
-        inputbox = self.browser.find_element_by_id('id_new_item')
+        inputbox = self.browser.find_element_by_id('id_text')
         self.assertAlmostEqual(
             inputbox.location['x'] + inputbox.size['width'] / 2,
             512,
@@ -94,26 +99,24 @@ class ItemValidationTest(FunctionalTest):
 
     def test_cannot_add_empty_list_items(self):
         self.browser.get(self.live_server_url)
-        self.browser.find_element_by_id('id_new_item').send_keys('\n')
+        response = self.client.post('/lists/new', data={'text': ''})
 
         # The home page refreshes, and there is an error message saying
         # that list items cannot be blank
-        error = self.browser.find_element_by_css_selector('.has-error')
-        self.assertEqual(error.text, "You can't have an empty list item")
+        self.assertContains(response, escape(EMPTY_LIST_ERROR))
 
         # She tries again with some text for the item, which now works
-        self.browser.find_element_by_id('id_new_item').send_keys('Buy milk\n')
+        self.browser.find_element_by_id('id_text').send_keys('Buy milk\n')
         self.check_for_row_in_list_table('1: Buy milk')
 
         # Perversely, she now decides to submit a second blank list item
-        self.browser.find_element_by_id('id_new_item').send_keys('\n')
+        self.browser.find_element_by_id('id_text').send_keys('\n')
 
         # She receives a similar warning on the list page
         self.check_for_row_in_list_table('1: Buy milk')
-        error = self.browser.find_element_by_css_selector('.has-error')
-        self.assertEqual(error.text, "You can't have an empty list item")
+        self.assertContains(response, escape(EMPTY_LIST_ERROR))
 
         # And she can correct it by filling some text in
-        self.browser.find_element_by_id('id_new_item').send_keys('Make tea\n')
+        self.browser.find_element_by_id('id_text').send_keys('Make tea\n')
         self.check_for_row_in_list_table('1: Buy milk')
         self.check_for_row_in_list_table('2: Make tea')
