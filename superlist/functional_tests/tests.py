@@ -92,9 +92,8 @@ class LayoutAndStylingTest(FunctionalTest):
 
 class ItemValidationTest(FunctionalTest):
 
-    @skip
     def test_cannot_add_empty_list_items(self):
-        self.browser.get(self.server_url)
+        self.browser.get(self.live_server_url)
         self.browser.find_element_by_id('id_new_item').send_keys('\n')
 
         # The home page refreshes, and there is an error message saying
