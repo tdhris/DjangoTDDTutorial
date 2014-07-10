@@ -21,6 +21,9 @@ class FunctionalTest(StaticLiveServerCase):
     def get_item_input_box(self):
         return self.browser.find_element_by_id('id_text')
 
+    def get_error_element(self):
+        return self.browser.find_element_by_css_selector('.has-error')
+
 
 class NewVisitorTest(FunctionalTest):
 
@@ -122,5 +125,6 @@ class ItemValidationTest(FunctionalTest):
         self.get_item_input_box().send_keys('Buy wellies\n')
 
         self.check_for_row_in_list_table('1: Buy wellies')
-        error = self.browser.find_element_by_css_selector('.has-error')
+        error = self.get_error_element()
         self.assertEqual(error.text, "You've already got this in your list")
+        self.assertFalse(error.is_displayed())

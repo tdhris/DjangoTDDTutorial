@@ -1,14 +1,23 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.template import RequestContext, loader
 from lists.models import Item, List
 from lists.forms import ExistingListItemForm, ItemForm
+from django.http import HttpResponse
+# from django.views import generic
+
+
+HOME_TEMPLATE = 'home.html'
+LIST_TEMPLATE = 'list.html'
 
 
 def home_page(request):
-    return render(request, 'home.html', {'form': ItemForm()})
+    template = loader.get_template(HOME_TEMPLATE)
+    context = RequestContext(request, {'form': ItemForm()})
+    return HttpResponse(template.render(context))
 
 
 def view_list(request, list_id):
-    list_ = List.objects.get(id=list_id)
+    list_ = get_object_or_404(List, pk=list_id)
     form = ExistingListItemForm(for_list=list_)
     if request.method == 'POST':
         form = ExistingListItemForm(for_list=list_, data=request.POST)

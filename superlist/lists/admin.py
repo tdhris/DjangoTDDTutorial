@@ -1,3 +1,10 @@
 from django.contrib import admin
+from lists.models import Item, List
 
-# Register your models here.
+
+class ItemAdmin(admin.ModelAdmin):
+    fieldsets = [(None, {'fields': ['text']}),
+                 ('Choose List', {'fields': ['list']})]
+
+admin.site.register(List)
+admin.site.register(Item, ItemAdmin)
